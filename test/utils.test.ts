@@ -6,10 +6,7 @@ import {IWebPubView} from 'opds-fetcher-parser/build/src/interface/webpub';
 import {OpdsFetcher} from 'opds-fetcher-parser';
 import {http} from 'ts-fetch';
 import {S3RequestPresigner} from '@aws-sdk/s3-request-presigner';
-import {
-  IHttpGetResult,
-  THttpGetResultAfterCallback,
-} from 'ts-fetch/build/src/http.type';
+import {IHttpGetResult} from 'ts-fetch/build/src/http.type';
 import {Controller} from '../src/controller';
 
 export const s3PresignedMocked = (url: string) => {
@@ -21,12 +18,8 @@ export const s3PresignedMocked = (url: string) => {
 };
 
 export const httpMocked = (res: IHttpGetResult<any>) => {
-  const getStubs = Sinon.stub();
-  const _http = Sinon.createStubInstance(http, {
-    // @ts-ignore
-    get: getStubs.returns(Promise.resolve(getStubs.args[0][2](res))),
-  });
-
+  const _http = new http();
+  const getStub = Sinon.stub(_http, 'get').returns(Promise.resolve(res));
   return _http;
 };
 
@@ -44,7 +37,7 @@ export const fetcherMocked = (
   return fetcher;
 };
 
-export const expressMocked = (
+export const expressMocked = async (
   params: httpMocks.Params,
   headers: httpMocks.Headers,
   webpub: Partial<IWebPubView> | undefined = undefined,
@@ -68,7 +61,7 @@ export const expressMocked = (
   const presign = s3PresignedMocked(url!);
   const controller = new Controller(http, fetcher, presign);
 
-  fn(req, res, controller);
+  await fn(req, res, controller);
   const data = res._getJSONData();
 
   return [data, res.statusCode];
