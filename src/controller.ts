@@ -71,10 +71,10 @@ export class Controller {
   }
 
   public async isNotAuthentified(cred: ICred) {
-    console.log('IS AUTH');
-
     ok(this.http);
-    const res = await this.http.get(cred.accessUrl);
+
+    const authenticationUrl = process.env[cred.accessUrl] || '';
+    const res = await this.http.get(authenticationUrl);
     console.log('HTTP IsAuth resultat', res);
 
     const notAuthentified = (res?.statusCode || 0) === 401;
