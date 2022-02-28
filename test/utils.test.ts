@@ -14,15 +14,15 @@ import {fn} from '../src';
 // };
 
 export const expressMocked = (
-  body: httpMocks.Body,
+  params: httpMocks.Params,
   headers: httpMocks.Headers /*, webpub: Partial<IWebPubView> | undefined = undefined*/
 ) => {
   // const fetcher = fetcherMocked(feed, webpub) as unknown as OpdsFetcher;
 
   const req = httpMocks.createRequest({
-    body,
     headers,
     method: 'GET',
+    params,
   });
 
   const res = httpMocks.createResponse({
