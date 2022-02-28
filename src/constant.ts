@@ -1,13 +1,11 @@
-export const credentials: Record<
-  string,
-  | {
-      accessUrl: string;
-      accessKeyId: string;
-      secretAccessKeyId: string;
-      regions: string;
-    }
-  | undefined
-> = {
+export interface ICred {
+  accessUrl: string;
+  accessKeyId: string;
+  secretAccessKeyId: string;
+  regions: string;
+}
+
+export const credentials: Record<string, ICred | undefined> = {
   cela: {
     accessUrl: 'CELA_ACCESS_URL',
     accessKeyId: 'CELA_ACCESS_KEY_ID',

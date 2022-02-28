@@ -6,6 +6,11 @@ import {AuthenticationStorage, http} from 'ts-fetch';
 import {credentials} from './constant';
 import {Controller} from './controller';
 import validator from 'validator';
+import * as dotenv from 'dotenv';
+
+if (process.env['NODE_ENV'] === 'development') {
+  dotenv.config();
+}
 
 export const fn = async (
   req: Request,
@@ -33,51 +38,29 @@ export const fn = async (
   }
 
   const s3ManifestUrl = req.params.url;
+  console.log('S3 manifest url:', s3ManifestUrl);
   if (
-    !s3ManifestUrl &&
-    validator.isURL(s3ManifestUrl, {
-      protocols: ['https'],
+    !s3ManifestUrl ||
+    !validator.isURL(s3ManifestUrl, {
+      protocols: ['https'], // @TODO do not work why ?
     })
   ) {
     // @todo checks if it is a valid s3 url with the specific bucket
-
     res.status(400).json({status: 'error', message: 'bad request'});
     return;
   }
-
-  const accessKeyId = process.env[cred.accessKeyId] || '';
-  const secretAccessKey = process.env[cred.secretAccessKeyId] || '';
-  const region = process.env[cred.regions] || '';
-
-  const presigner = new S3RequestPresigner({
-    credentials: {
-      accessKeyId,
-      secretAccessKey,
-    },
-    region,
-    sha256: Hash.bind(null, 'sha256'), // In Node.js
-  });
 
   const accessToken = (req.headers.authorization || '')
     .replace(/\s/g, '')
     .replace('BEARER', '')
     .replace('Bearer', '')
     .replace('bearer', '');
-  const authenticationUrl = process.env[cred.accessUrl] || '';
 
-  const authenticationStorage = new AuthenticationStorage();
-  authenticationStorage.setAuthenticationToken({
-    accessToken,
-    authenticationUrl,
-  });
-  const requester = new http(undefined, authenticationStorage);
-  const fetcher = new OpdsFetcher(requester);
-  controller.setup(requester, fetcher, presigner);
+  controller.setupPresigner(cred);
+  controller.setupHttpFetcher(accessToken, cred);
 
-  const authRequest = await requester.get(authenticationUrl);
-  const notAuthentified = (authRequest?.statusCode || 0) === 401;
-  const isKo = authRequest?.isFailure;
-  if (notAuthentified || isKo) {
+  const notAuthentified = await controller.isNotAuthentified(cred);
+  if (notAuthentified) {
     res.status(401).json({status: 'error', message: 'unauthorized'});
     return;
   }
@@ -85,7 +68,8 @@ export const fn = async (
   // start algo
   // crawling manifest, update it, and send it
 
-  await controller.start(s3ManifestUrl);
+  const manifest = await controller.start(s3ManifestUrl);
+  res.status(200).json(manifest); // @todo set content type webpub json
 };
 
 /**

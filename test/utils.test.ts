@@ -4,7 +4,7 @@ import {fn} from '../src';
 import {IOpdsResultView} from 'opds-fetcher-parser/build/src/interface/opds';
 import {IWebPubView} from 'opds-fetcher-parser/build/src/interface/webpub';
 import {OpdsFetcher} from 'opds-fetcher-parser';
-import {http} from 'ts-fetch';
+import {AuthenticationStorage, http} from 'ts-fetch';
 import {S3RequestPresigner} from '@aws-sdk/s3-request-presigner';
 import {IHttpGetResult} from 'ts-fetch/build/src/http.type';
 import {Controller} from '../src/controller';
@@ -18,7 +18,12 @@ export const s3PresignedMocked = (url: string) => {
 };
 
 export const httpMocked = (res: IHttpGetResult<any>) => {
-  const _http = new http();
+  const auth = new AuthenticationStorage();
+  auth.setAuthenticationToken({
+    accessToken: 'token',
+    authenticationUrl: 'http://my.url',
+  });
+  const _http = new http(undefined, auth);
   const getStub = Sinon.stub(_http, 'get').returns(Promise.resolve(res));
   return _http;
 };
@@ -57,6 +62,7 @@ export const expressMocked = async (
   });
 
   const fetcher = fetcherMocked(undefined, webpub);
+
   const http = httpMocked(httpRes!);
   const presign = s3PresignedMocked(url!);
   const controller = new Controller(http, fetcher, presign);

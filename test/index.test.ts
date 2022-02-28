@@ -65,7 +65,7 @@ describe('manifest cloud function', async () => {
   it('good bearer - bad params', async () => {
     params.id = 'cela'; // good
     params.url = 'not an url';
-    header.authorization = 'BEARER good';
+    header.authorization = 'BEARER token';
     const [data, code] = await expressMocked(params, header);
 
     code.should.to.be.eq(400);
@@ -74,7 +74,7 @@ describe('manifest cloud function', async () => {
   });
   it('good bearer - bad params', async () => {
     params.id = 'bad'; // bad id so unauthorized
-    params.url = 'http://my.url';
+    params.url = 'https://my.url';
     header.authorization = 'BEARER good';
     const [data, code] = await expressMocked(params, header);
 
@@ -84,9 +84,13 @@ describe('manifest cloud function', async () => {
   });
   it('request manifest', async () => {
     params.id = 'cela'; // good
-    params.url = 'http://my.url';
+    params.url = 'https://s3.manifest.aws.com';
     header.authorization = 'BEARER good';
-    const [data, code] = await expressMocked(params, header);
+    // @ts-ignore
+    const [data, code] = await expressMocked(params, header, undefined, {
+      statusCode: 200,
+      isFailure: false,
+    });
 
     code.should.to.be.eq(200);
   });
