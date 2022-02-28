@@ -10,6 +10,7 @@ import {
   IHttpGetResult,
   THttpGetResultAfterCallback,
 } from 'ts-fetch/build/src/http.type';
+import {Controller} from '../src/controller';
 
 export const s3PresignedMocked = (url: string) => {
   const presign = Sinon.createStubInstance(S3RequestPresigner, {
@@ -45,7 +46,10 @@ export const fetcherMocked = (
 
 export const expressMocked = (
   params: httpMocks.Params,
-  headers: httpMocks.Headers /*, webpub: Partial<IWebPubView> | undefined = undefined*/
+  headers: httpMocks.Headers,
+  webpub: Partial<IWebPubView> | undefined = undefined,
+  httpRes: IHttpGetResult<any> | undefined = undefined,
+  url: string | undefined = undefined
 ) => {
   // const fetcher = fetcherMocked(feed, webpub) as unknown as OpdsFetcher;
 
@@ -59,7 +63,12 @@ export const expressMocked = (
     eventEmitter: require('events').EventEmitter,
   });
 
-  fn(req, res);
+  const fetcher = fetcherMocked(undefined, webpub);
+  const http = httpMocked(httpRes!);
+  const presign = s3PresignedMocked(url!);
+  const controller = new Controller(http, fetcher, presign);
+
+  fn(req, res, controller);
   const data = res._getJSONData();
 
   return [data, res.statusCode];
