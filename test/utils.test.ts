@@ -1,17 +1,47 @@
 import * as Sinon from 'sinon';
 import * as httpMocks from 'node-mocks-http';
 import {fn} from '../src';
+import {IOpdsResultView} from 'opds-fetcher-parser/build/src/interface/opds';
+import {IWebPubView} from 'opds-fetcher-parser/build/src/interface/webpub';
+import {OpdsFetcher} from 'opds-fetcher-parser';
+import {http} from 'ts-fetch';
+import {S3RequestPresigner} from '@aws-sdk/s3-request-presigner';
+import {
+  IHttpGetResult,
+  THttpGetResultAfterCallback,
+} from 'ts-fetch/build/src/http.type';
 
-// export const fetcherMocked = (feed?: Partial<IOpdsResultView>, webpub?: Partial<IWebPubView>) => {
-//   const fetcher = Sinon.createStubInstance(OpdsFetcher, {
-//     // @ts-ignore
-//     feedRequest: sinon.stub().returns(Promise.resolve(feed)),
-//     // @ts-ignore
-//     webpubRequest: sinon.stub().returns(Promise.resolve(webpub)),
-//   });
+export const s3PresignedMocked = (url: string) => {
+  const presign = Sinon.createStubInstance(S3RequestPresigner, {
+    // @ts-ignore
+    presign: Sinon.stub().returns(Promise.resolve(url)),
+  });
+  return presign;
+};
 
-//   return fetcher;
-// };
+export const httpMocked = (res: IHttpGetResult<any>) => {
+  const getStubs = Sinon.stub();
+  const _http = Sinon.createStubInstance(http, {
+    // @ts-ignore
+    get: getStubs.returns(Promise.resolve(getStubs.args[0][2](res))),
+  });
+
+  return _http;
+};
+
+export const fetcherMocked = (
+  feed?: Partial<IOpdsResultView>,
+  webpub?: Partial<IWebPubView>
+) => {
+  const fetcher = Sinon.createStubInstance(OpdsFetcher, {
+    // @ts-ignore
+    feedRequest: Sinon.stub().returns(Promise.resolve(feed)),
+    // @ts-ignore
+    webpubRequest: Sinon.stub().returns(Promise.resolve(webpub)),
+  });
+
+  return fetcher;
+};
 
 export const expressMocked = (
   params: httpMocks.Params,
