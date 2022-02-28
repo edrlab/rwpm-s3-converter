@@ -1,2 +1,13 @@
 # rwpm-s3-converter
-readium webpub manifest on s3 storage converted to an authenticated bearer token endpoint with presigned mp3 urls
+
+Input : 
+- bearer token in Authorization header 
+- Query param: 
+  - url: manifest s3 object url
+  - id: project identifier
+
+Fn: HTTPS google cloud function
+
+Output : 
+- RWPM manifest json (application/json) with mp3 url presigned (direct download)
+
