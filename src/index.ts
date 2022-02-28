@@ -1,6 +1,6 @@
 import {Request, Response} from '@google-cloud/functions-framework';
 
-const fn = async (req: Request, res: Response) => {
+export const fn = async (req: Request, res: Response) => {
   switch (req.method) {
     case 'GET':
       res.status(404).json({status: 'error', message: 'not implemented yet'});
