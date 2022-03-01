@@ -13,7 +13,6 @@ steps:
     dir: '.'
   - name: 'gcr.io/cloud-builders/gcloud'
     args: [
-      'gcloud',
       'functions',
       'deploy',
       'manifest',
