@@ -1,14 +1,11 @@
 # [START functions_ci_cd_cloud_build]
 steps:
-  - name: 'gcr.io/cloud-builders/node:16'
-    entrypoint: npm
+  - name: 'gcr.io/cloud-builders/npm'
     args: ['--version']
-  - name: 'gcr.io/cloud-builders/node:16'
-    entrypoint: npm
+  - name: 'gcr.io/cloud-builders/npm'
     args: ['install']
     dir: '.'
-  - name: 'gcr.io/cloud-builders/node:16'
-    entrypoint: npm
+  - name: 'gcr.io/cloud-builders/npm'
     args: ['test']
     dir: '.'
   - name: 'gcr.io/cloud-builders/gcloud'
