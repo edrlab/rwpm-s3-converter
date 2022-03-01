@@ -4,20 +4,24 @@ import {ok} from 'assert';
 import {OpdsFetcher} from 'opds-fetcher-parser';
 import {AuthenticationStorage, http} from 'ts-fetch';
 import {ICred} from './credentials';
+import {Service} from './service';
 
 export class Controller {
   private http: http | undefined;
   private fetcher: OpdsFetcher | undefined;
   private presigner: S3RequestPresigner | undefined;
+  private service: Service;
 
   constructor(
     _http?: http,
     _fetcher?: OpdsFetcher,
-    _presigner?: S3RequestPresigner
+    _presigner?: S3RequestPresigner,
+    _service: Service = new Service()
   ) {
     this.http = _http;
     this.fetcher = _fetcher;
     this.presigner = _presigner;
+    this.service = _service;
   }
 
   public setup(
@@ -87,6 +91,13 @@ export class Controller {
       'Start crawling manifest and then update it with presign mp3 url'
     );
 
-    return {};
+    ok(this.fetcher);
+    ok(this.presigner);
+
+    this.service.setup(this.fetcher, this.presigner);
+
+    // const manifest = await this.service.start(url);
+    const manifest = {}; // @todo
+    return manifest;
   }
 }
