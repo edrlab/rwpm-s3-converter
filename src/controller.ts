@@ -3,7 +3,7 @@ import {S3RequestPresigner} from '@aws-sdk/s3-request-presigner';
 import {ok} from 'assert';
 import {OpdsFetcher} from 'opds-fetcher-parser';
 import {AuthenticationStorage, http} from 'ts-fetch';
-import {ICred} from './constant';
+import {ICred} from './credentials';
 
 export class Controller {
   private http: http | undefined;
@@ -35,9 +35,9 @@ export class Controller {
       return;
     }
 
-    const accessKeyId = process.env[cred.accessKeyId] || '';
-    const secretAccessKey = process.env[cred.secretAccessKeyId] || '';
-    const region = process.env[cred.regions] || '';
+    const accessKeyId = cred.accessKeyId;
+    const secretAccessKey = cred.secretAccessKeyId;
+    const region = cred.regions;
 
     const presigner = new S3RequestPresigner({
       credentials: {
@@ -56,7 +56,7 @@ export class Controller {
       return;
     }
 
-    const authenticationUrl = process.env[cred.accessUrl] || '';
+    const authenticationUrl = cred.accessUrl;
 
     const authenticationStorage = new AuthenticationStorage();
     authenticationStorage.setAuthenticationToken({
@@ -73,9 +73,8 @@ export class Controller {
   public async isNotAuthentified(cred: ICred) {
     ok(this.http);
 
-    const authenticationUrl = process.env[cred.accessUrl] || '';
+    const authenticationUrl = cred.accessUrl;
     const res = await this.http.get(authenticationUrl);
-    console.log('HTTP IsAuth resultat', res);
 
     const notAuthentified = (res?.statusCode || 0) === 401;
     const isKo = res?.isFailure;

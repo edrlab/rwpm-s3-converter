@@ -1,9 +1,5 @@
-import {Hash} from '@aws-sdk/hash-node';
-import {S3RequestPresigner} from '@aws-sdk/s3-request-presigner';
 import {Request, Response} from '@google-cloud/functions-framework';
-import {OpdsFetcher} from 'opds-fetcher-parser';
-import {AuthenticationStorage, http} from 'ts-fetch';
-import {credentials} from './constant';
+import {credentials} from './credentials';
 import {Controller} from './controller';
 import validator from 'validator';
 import * as dotenv from 'dotenv';
