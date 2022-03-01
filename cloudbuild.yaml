@@ -1,12 +1,25 @@
 # [START functions_ci_cd_cloud_build]
 steps:
-  - name: 'gcr.io/cloud-builders/npm'
+  - name: 'gcr.io/cloud-builders/npm:16'
     args: ['install']
     dir: '.'
-  - name: 'gcr.io/cloud-builders/npm'
+  - name: 'gcr.io/cloud-builders/npm:16'
     args: ['test']
     dir: '.'
   - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['functions', 'deploy', 'manifest', '--runtime', 'nodejs14', '--trigger-http', '--allow-unauthenticated', '--source=build/src']
+    args: [
+      'gcloud',
+      'functions',
+      'deploy',
+      'manifest',
+      '--entry-point',
+      'manifest',
+      '--runtime', 
+      'nodejs16',
+      '--memory',
+      '1024MB',
+      '--trigger-http',
+      '--allow-unauthenticated'
+    ]
     dir: '.'
 # [END functions_ci_cd_cloud_build]
