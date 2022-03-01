@@ -19,7 +19,7 @@
     "pretest": "npm run compile",
     "posttest": "npm run lint",
     "start": "functions-framework --target=manifest",
-    "deploy": "gcloud functions deploy manifest --runtime nodejs14 --trigger-http --allow-unauthenticated --source=build/src"
+    "deploy": "gcloud functions deploy manifest --runtime nodejs16 --trigger-http --allow-unauthenticated --source=build/src"
   },
   "devDependencies": {
     "@types/chai": "^4.3.0",
