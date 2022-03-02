@@ -171,7 +171,7 @@ export class Service {
     webpub.toc = Array.isArray(webpub.toc)
       ? webpub.toc.map(link => this.mapSignUrl(link, mapUrl))
       : undefined;
-    webpub.toc = Array.isArray(webpub.resources)
+    webpub.resources = Array.isArray(webpub.resources)
       ? webpub.resources.map(link => this.mapSignUrl(link, mapUrl))
       : undefined;
 
