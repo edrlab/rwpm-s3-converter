@@ -53,7 +53,7 @@ export const fn = async (
     .replace('bearer', '');
 
   controller.setupPresigner(cred);
-  controller.setupHttpFetcher(accessToken, cred);
+  controller.setupHttpFetcher(accessToken);
 
   const notAuthentified = await controller.isNotAuthentified(cred);
   if (notAuthentified) {
@@ -65,7 +65,7 @@ export const fn = async (
   // crawling manifest, update it, and send it
 
   const manifest = await controller.start(s3ManifestUrl);
-  res.status(200).json(manifest); // @todo set content type webpub json
+  res.status(200).contentType('application/webpub+json').json(manifest);
 };
 
 /**
@@ -76,7 +76,7 @@ export const fn = async (
  * @param {Object} res Cloud Function response context.
  *                     More info: https://expressjs.com/en/api.html#res
  */
-exports.manifest = async (req: Request, res: Response) => {
+export const manifest = async (req: Request, res: Response) => {
   try {
     res.set('Access-Control-Allow-Origin', '*');
 

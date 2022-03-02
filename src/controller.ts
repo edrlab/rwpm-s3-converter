@@ -1,35 +1,33 @@
 import {Hash} from '@aws-sdk/hash-node';
 import {S3RequestPresigner} from '@aws-sdk/s3-request-presigner';
 import {ok} from 'assert';
-import {OpdsFetcher} from 'opds-fetcher-parser';
-import {AuthenticationStorage, http} from 'ts-fetch';
+import fetch, {Headers, Response} from 'node-fetch';
 import {ICred} from './credentials';
 import {Service} from './service';
 
+export type fetchRequest = (
+  token?: boolean
+) => (url: string) => Promise<Response>;
+
 export class Controller {
-  private http: http | undefined;
-  private fetcher: OpdsFetcher | undefined;
+  private fetcher: fetchRequest | undefined;
   private presigner: S3RequestPresigner | undefined;
   private service: Service;
 
   constructor(
-    _http?: http,
-    _fetcher?: OpdsFetcher,
+    _fetcher?: fetchRequest,
     _presigner?: S3RequestPresigner,
     _service: Service = new Service()
   ) {
-    this.http = _http;
     this.fetcher = _fetcher;
     this.presigner = _presigner;
     this.service = _service;
   }
 
   public setup(
-    _http?: http,
-    _fetcher?: OpdsFetcher,
+    _fetcher?: fetchRequest,
     _S3RequestPresigner?: S3RequestPresigner
   ) {
-    this.http = _http;
     this.fetcher = _fetcher;
     this.presigner = _S3RequestPresigner;
   }
@@ -55,33 +53,32 @@ export class Controller {
     this.presigner = presigner;
   }
 
-  public setupHttpFetcher(accessToken: string, cred: ICred) {
-    if (this.fetcher || this.http) {
+  public setupHttpFetcher(accessToken: string) {
+    if (this.fetcher) {
       return;
     }
 
-    const authenticationUrl = cred.accessUrl;
-
-    const authenticationStorage = new AuthenticationStorage();
-    authenticationStorage.setAuthenticationToken({
-      accessToken,
-      authenticationUrl,
-    });
-    const requester = new http(undefined, authenticationStorage);
-    const fetcher = new OpdsFetcher(requester);
-
-    this.http = requester;
-    this.fetcher = fetcher;
+    this.fetcher = (token?: boolean) => {
+      const headers = new Headers();
+      if (token) {
+        headers.set('Authorization', 'Bearer ' + accessToken);
+      }
+      return (url: string) => {
+        return fetch(url, {
+          headers,
+        });
+      };
+    };
   }
 
   public async isNotAuthentified(cred: ICred) {
-    ok(this.http);
+    ok(this.fetcher);
 
     const authenticationUrl = cred.accessUrl;
-    const res = await this.http.get(authenticationUrl);
+    const res = await this.fetcher(true)(authenticationUrl);
 
-    const notAuthentified = (res?.statusCode || 0) === 401;
-    const isKo = res?.isFailure;
+    const notAuthentified = (res?.status || 0) === 401;
+    const isKo = !res?.ok;
 
     return notAuthentified || isKo;
   }
@@ -94,10 +91,9 @@ export class Controller {
     ok(this.fetcher);
     ok(this.presigner);
 
-    this.service.setup(this.fetcher, this.presigner);
+    this.service.setup(this.fetcher(false), this.presigner);
 
-    // const manifest = await this.service.start(url);
-    const manifest = {}; // @todo
+    const manifest = await this.service.start(url);
     return manifest;
   }
 }

@@ -3,23 +3,32 @@ import {S3RequestPresigner} from '@aws-sdk/s3-request-presigner';
 import {parseUrl} from '@aws-sdk/url-parser';
 import {formatUrl} from '@aws-sdk/util-format-url';
 import {ok} from 'assert';
-import {OpdsFetcher} from 'opds-fetcher-parser';
-import {
-  IReadingLink,
-  IWebPubView,
-} from 'opds-fetcher-parser/build/src/interface/webpub';
+import {Response} from 'node-fetch';
 import validator from 'validator';
+import {urlPathResolve} from './resolveUrl';
+
+type fetcher = (url: string) => Promise<Response>;
+
+interface ILink {
+  href: string;
+}
+
+export interface IWebpub {
+  readingOrder: ILink[];
+  resources?: ILink[];
+  toc?: ILink[];
+}
 
 export class Service {
-  private fetcher: OpdsFetcher | undefined;
+  private fetcher: fetcher | undefined;
   private signer: S3RequestPresigner | undefined;
 
-  constructor(fetcher?: OpdsFetcher, signer?: S3RequestPresigner) {
+  constructor(fetcher?: fetcher, signer?: S3RequestPresigner) {
     this.fetcher = fetcher;
     this.signer = signer;
   }
 
-  public setup(fetcher: OpdsFetcher, signer: S3RequestPresigner) {
+  public setup(fetcher: fetcher, signer: S3RequestPresigner) {
     if (!this.fetcher) {
       this.fetcher = fetcher;
     }
@@ -49,22 +58,57 @@ export class Service {
     }
     ok(this.fetcher);
 
-    const data = await this.fetcher.webpubRequest(webpubUrl);
-    return data;
+    const data = await this.fetcher(webpubUrl);
+
+    if (!data.ok) {
+      throw new Error('Cannot fetch webpuburl (' + data.status + ')');
+    }
+    const json = await data.json();
+    return json;
   }
 
-  private findMp3LinksFromManifest(webpub: IWebPubView): IReadingLink[] {
-    const readingOrders = Array.isArray(webpub.readingOrders)
-      ? webpub.readingOrders
-      : [];
-    const toc = Array.isArray(webpub.toc) ? webpub.toc : [];
-    const links = [...readingOrders, ...toc];
+  private parseWebpub(webpub: any, base: string): IWebpub {
+    if (!webpub || typeof webpub !== 'object') {
+      throw new Error('not a valid json format');
+    }
+
+    const {readingOrder} = webpub;
+    if (!Array.isArray(readingOrder)) {
+      throw new Error('no readingOrder');
+    }
+
+    const resolveUrl = (v: ILink) => {
+      if (!v?.href) {
+        throw new Error('url undefined');
+      }
+      v.href = urlPathResolve(base, v.href);
+    };
+    (readingOrder as ILink[]).forEach(resolveUrl);
+    const resources = webpub.resources;
+    if (Array.isArray(resources)) {
+      (resources as ILink[]).forEach(resolveUrl);
+    } else {
+      (webpub as IWebpub).resources = undefined;
+    }
+    const toc = webpub.toc;
+    if (Array.isArray(toc)) {
+      (toc as ILink[]).forEach(resolveUrl);
+    } else {
+      (webpub as IWebpub).resources = undefined;
+    }
+
+    return webpub;
+  }
+
+  private findMp3LinksFromManifest(webpub: IWebpub): ILink[] {
+    const {readingOrder, toc, resources} = webpub;
+    const links = [...readingOrder, ...(toc || []), ...(resources || [])];
     return links;
   }
 
-  private checksMp3LinksFromManifest(links: IReadingLink[]) {
+  private checksMp3LinksFromManifest(links: ILink[]) {
     for (const v of links) {
-      if (!validator.isURL(v?.url)) {
+      if (!validator.isURL(v?.href)) {
         throw new Error('not a valid s3 url');
       }
     }
@@ -75,10 +119,10 @@ export class Service {
     return `${u.origin}${u.pathname}`;
   }
 
-  private collectUrl(links: IReadingLink[]): Set<string> {
+  private collectUrl(links: ILink[]): Set<string> {
     const s = new Set<string>();
     for (const v of links) {
-      s.add(this.extractOriginAndPathnameFromUrl(v.url));
+      s.add(this.extractOriginAndPathnameFromUrl(v.href));
     }
 
     return s;
@@ -110,36 +154,37 @@ export class Service {
     return from.toString();
   }
 
-  private mapSignUrl(
-    link: IReadingLink,
-    mapUrl: Map<string, string>
-  ): IReadingLink {
-    const url = this.extractOriginAndPathnameFromUrl(link.url);
+  private mapSignUrl(link: ILink, mapUrl: Map<string, string>): ILink {
+    const url = this.extractOriginAndPathnameFromUrl(link.href);
     const sign = mapUrl.get(url);
     if (!sign) {
       throw new Error('no presigned url');
     }
-    link.url = this.mergeUrl(link.url, sign);
+    link.href = this.mergeUrl(link.href, sign);
     return link;
   }
 
-  private replaceUrl(
-    webpub: IWebPubView,
-    mapUrl: Map<string, string>
-  ): IWebPubView {
-    webpub.readingOrders = webpub.readingOrders.map(link =>
+  private replaceUrl(webpub: IWebpub, mapUrl: Map<string, string>): IWebpub {
+    webpub.readingOrder = webpub.readingOrder.map(link =>
       this.mapSignUrl(link, mapUrl)
     );
     webpub.toc = Array.isArray(webpub.toc)
       ? webpub.toc.map(link => this.mapSignUrl(link, mapUrl))
       : undefined;
+    webpub.toc = Array.isArray(webpub.resources)
+      ? webpub.resources.map(link => this.mapSignUrl(link, mapUrl))
+      : undefined;
 
     return webpub;
   }
 
-  public async start(s3url: string): Promise<IWebPubView> {
+  public async start(s3url: string): Promise<IWebpub> {
     const s3SignedUrl = await this.presign(s3url);
-    const webpub = await this.fetchWepub(s3SignedUrl);
+    const webpubRawJson = await this.fetchWepub(s3SignedUrl);
+
+    // parse webpub
+    const webpub = this.parseWebpub(webpubRawJson, s3url);
+
     const mp3Links = this.findMp3LinksFromManifest(webpub);
     this.checksMp3LinksFromManifest(mp3Links);
     const urlsSet = this.collectUrl(mp3Links);

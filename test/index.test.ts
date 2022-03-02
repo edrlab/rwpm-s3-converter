@@ -2,15 +2,24 @@ import {Headers, Params} from 'node-mocks-http';
 import {expressMocked} from './utils.test';
 
 import * as chai from 'chai';
+import {Response} from 'node-fetch';
+import Sinon = require('sinon');
+import {webpub} from './webpub.test';
 chai.should();
 
 let params: Params = {};
 let header: Headers = {};
 
+export let ___sandbox: any;
 describe('manifest cloud function', async () => {
   beforeEach(() => {
     params = {};
     header = {};
+    ___sandbox = Sinon.createSandbox();
+  });
+
+  afterEach(() => {
+    ___sandbox.restore();
   });
 
   // it('should returns 404', () => {
@@ -87,10 +96,12 @@ describe('manifest cloud function', async () => {
     params.url = 'https://s3.manifest.aws.com';
     header.authorization = 'BEARER good';
     // @ts-ignore
-    const [data, code] = await expressMocked(params, header, undefined, {
-      statusCode: 200,
-      isFailure: false,
-    });
+    const [data, code] = await expressMocked(
+      params,
+      header,
+      new Response(webpub, {status: 200}),
+      'https://presigned.rl'
+    );
 
     code.should.to.be.eq(200);
   });
