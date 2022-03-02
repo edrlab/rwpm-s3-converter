@@ -5,6 +5,7 @@ import * as chai from 'chai';
 import {Response} from 'node-fetch';
 import Sinon = require('sinon');
 import {webpub} from './webpub.test';
+import {IWebpub} from '../src/service';
 chai.should();
 
 let params: Params = {};
@@ -96,13 +97,45 @@ describe('manifest cloud function', async () => {
     params.url = 'https://s3.manifest.aws.com';
     header.authorization = 'BEARER good';
     // @ts-ignore
-    const [data, code] = await expressMocked(
+
+    let i = 0;
+    const [data, code] = (await expressMocked(
       params,
       header,
       new Response(webpub, {status: 200}),
-      'https://presigned.rl'
-    );
+      () => (i++, 'https://presigned.rl/' + i.toString())
+    )) as [IWebpub, number];
 
+    console.log(data);
+
+    (data as any).metadata.should.to.deep.equal(JSON.parse(webpub).metadata);
+    data.readingOrder.should.to.be.an('array');
+    data.resources?.should.to.be.an('array');
+    data.toc?.should.to.be.an('array');
+    data.readingOrder.map(({href, ...t}, i) => {
+      const u = new URL(href);
+      u.pathname.should.to.be.eq('/' + (i + 2));
+      u.host.should.to.be.eq('presigned.rl');
+      const l = JSON.parse(webpub).readingOrder[i];
+      delete l.href;
+      t.should.to.deep.eq(l);
+    });
+    data.toc?.map(({href, ...t}, i) => {
+      const u = new URL(href);
+      u.pathname.should.to.be.eq('/' + (i + 2));
+      u.host.should.to.be.eq('presigned.rl');
+      const l = JSON.parse(webpub).toc[i];
+      delete l.href;
+      t.should.to.deep.eq(l);
+    });
+    data.resources?.map(({href, ...t}, i) => {
+      const u = new URL(href);
+      u.pathname.should.to.be.eq('/' + (i + 2));
+      u.host.should.to.be.eq('presigned.rl');
+      const l = JSON.parse(webpub).resources[i];
+      delete l.href;
+      t.should.to.deep.eq(l);
+    });
     code.should.to.be.eq(200);
   });
 });

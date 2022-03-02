@@ -9,12 +9,15 @@ import {___sandbox} from './index.test';
 import {HttpRequest} from '@aws-sdk/protocol-http';
 import {parseUrl} from '@aws-sdk/url-parser';
 
-export const s3PresignedMocked = (url = 'https://fake.url') => {
+export const s3PresignedMocked = (url = () => 'https://fake.url') => {
+  const s = Sinon.stub();
+
+  for (let i = 0; i < 100; i++) {
+    s.onCall(i).returns(Promise.resolve(new HttpRequest(parseUrl(url()))));
+  }
   const presign = Sinon.createStubInstance(S3RequestPresigner, {
     // @ts-ignore
-    presign: Sinon.stub().returns(
-      Promise.resolve(new HttpRequest(parseUrl(url)))
-    ),
+    presign: s.returns(Promise.resolve(new HttpRequest(parseUrl(url())))),
   });
   return presign;
 };
@@ -28,7 +31,7 @@ export const expressMocked = async (
   params: httpMocks.Params,
   headers: httpMocks.Headers,
   httpRes: Response | undefined = undefined,
-  url: string | undefined = undefined
+  url: (() => string) | undefined = undefined
 ) => {
   // const fetcher = fetcherMocked(feed, webpub) as unknown as OpdsFetcher;
 
