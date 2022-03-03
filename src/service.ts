@@ -5,6 +5,7 @@ import {formatUrl} from '@aws-sdk/util-format-url';
 import {ok} from 'assert';
 import {Response} from 'node-fetch';
 import validator from 'validator';
+import {EXPIRE_IN_NUMBER} from './credentials';
 import {urlPathResolve} from './resolveUrl';
 
 type fetcher = (url: string) => Promise<Response>;
@@ -45,7 +46,9 @@ export class Service {
 
     const s3ObjectUrl = parseUrl(s3url);
     // Create a GET request from S3 url.
-    const request = await this.signer.presign(new HttpRequest(s3ObjectUrl));
+    const request = await this.signer.presign(new HttpRequest(s3ObjectUrl), {
+      expiresIn: EXPIRE_IN_NUMBER,
+    });
     const url = formatUrl(request);
     console.log('PRESIGNED URL: ', url);
 

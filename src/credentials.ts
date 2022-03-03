@@ -20,3 +20,5 @@ export const credentials: Record<string, ICred | undefined> = {
     regions: process.env['CELA_REGIONS'] || '',
   },
 };
+
+export const EXPIRE_IN_NUMBER = 60 * 60 * 24;
