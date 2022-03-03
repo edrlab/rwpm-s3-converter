@@ -78,6 +78,8 @@ export const manifest = async (req: Request, res: Response) => {
   try {
     res.set('Access-Control-Allow-Origin', '*');
 
+    console.log('==> Start request from', req.hostname);
+
     const controller = new Controller();
     return await fn(req, res, controller);
   } catch (e) {

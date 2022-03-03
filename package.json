@@ -23,7 +23,8 @@
     "posttest": "npm run lint",
     "start": "functions-framework --target=manifest",
     "deploy": "gcloud functions deploy manifest --entry-point manifest --runtime nodejs16 --memory 1024MB --trigger-http --allow-unauthenticated",
-    "deploy-doc": "open https://github.com/GoogleCloudPlatform/functions-framework-nodejs/blob/master/docs/typescript.md"
+    "deploy-doc": "open https://github.com/GoogleCloudPlatform/functions-framework-nodejs/blob/master/docs/typescript.md",
+    "start:dev": "npm run compile && NODE_ENV=development npm run start"
   },
   "devDependencies": {
     "@types/chai": "^4.3.0",

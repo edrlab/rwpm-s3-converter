@@ -9,6 +9,7 @@ export interface ICred {
 
 if (process.env['NODE_ENV'] === 'development') {
   dotenv.config();
+  console.log(process.env);
 }
 
 export const credentials: Record<string, ICred | undefined> = {
