@@ -1,8 +1,14 @@
+import * as dotenv from 'dotenv';
+
 export interface ICred {
   accessUrl: string;
   accessKeyId: string;
   secretAccessKeyId: string;
   regions: string;
+}
+
+if (process.env['NODE_ENV'] === 'development') {
+  dotenv.config();
 }
 
 export const credentials: Record<string, ICred | undefined> = {

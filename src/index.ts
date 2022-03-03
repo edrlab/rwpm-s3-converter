@@ -2,12 +2,6 @@ import {Request, Response} from '@google-cloud/functions-framework';
 import {credentials} from './credentials';
 import {Controller} from './controller';
 import validator from 'validator';
-import * as dotenv from 'dotenv';
-
-if (process.env['NODE_ENV'] === 'development') {
-  dotenv.config();
-}
-
 export const fn = async (
   req: Request,
   res: Response,
@@ -26,15 +20,17 @@ export const fn = async (
     return;
   }
 
-  const id = req.params.id;
+  const id = typeof req.query.id === 'string' ? req.query.id : '';
+  console.log('ID=', id);
+
   const cred = credentials[id];
   if (!cred) {
     res.status(401).json({status: 'error', message: 'unauthorized'});
     return;
   }
 
-  const s3ManifestUrl = req.params.url;
-  console.log('S3 manifest url:', s3ManifestUrl);
+  const s3ManifestUrl = typeof req.query.url === 'string' ? req.query.url : '';
+  console.log('URL=', s3ManifestUrl);
   if (
     !s3ManifestUrl ||
     !validator.isURL(s3ManifestUrl, {
@@ -59,6 +55,8 @@ export const fn = async (
   if (notAuthentified) {
     res.status(401).json({status: 'error', message: 'unauthorized'});
     return;
+  } else {
+    console.log('AUTHENTIFIED');
   }
 
   // start algo

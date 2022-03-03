@@ -28,7 +28,7 @@ export const fetcherMocked = (res: Response) => {
 };
 
 export const expressMocked = async (
-  params: httpMocks.Params,
+  query: httpMocks.Query,
   headers: httpMocks.Headers,
   httpRes: Response | undefined = undefined,
   url: (() => string) | undefined = undefined
@@ -38,7 +38,7 @@ export const expressMocked = async (
   const req = httpMocks.createRequest({
     headers,
     method: 'GET',
-    params,
+    query,
   });
 
   const res = httpMocks.createResponse({
