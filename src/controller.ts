@@ -66,6 +66,7 @@ export class Controller {
       return (url: string) => {
         return fetch(url, {
           headers,
+          timeout: 60 * 5,
         });
       };
     };
