@@ -42,11 +42,8 @@ export const fn = async (
     return;
   }
 
-  const accessToken = (req.headers.authorization || '')
-    .replace(/\s/g, '')
-    .replace('BEARER', '')
-    .replace('Bearer', '')
-    .replace('bearer', '');
+  const accessToken =
+    req.headers.authorization?.replace(/(bearer|\s)/gi, '') || '';
 
   controller.setupPresigner(cred);
   controller.setupHttpFetcher(accessToken);
