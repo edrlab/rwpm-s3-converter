@@ -39,3 +39,14 @@ https://us-central1-edrlab-1.cloudfunctions.net/manifest
 https://console.cloud.google.com/cloud-build/builds?project=edrlab-1
 
 see `cloudbuild.yaml`
+
+
+## v2
+
+- Project: `edrlab-1`
+- Function: `manifest-v2`
+- Region: `northamerica-northeast1`
+- URL: https://manifest-v2-477342143077.northamerica-northeast1.run.app/
+
+`npm run build` generates `index.js`, `package.json` and
+`package-lock.json` in `build/gui/`.

@@ -18,6 +18,7 @@
     "lint": "gts lint",
     "clean": "gts clean",
     "compile": "tsc",
+    "build": "npm run compile && node scripts/build.cjs",
     "fix": "gts fix",
     "pretest": "npm run compile",
     "posttest": "npm run lint",
